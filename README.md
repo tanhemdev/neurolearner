@@ -9,11 +9,11 @@
   <img src="assets/therapytales-clinic.jpeg" width="400" alt="TherapyTales clinic" />
 </p>
 
-## why i built this
+## Why i built this
 
 In 2024, I interned at [TherapyTales](https://www.instagram.com/therapytalesclinic/) in Mumbai - a speech and swallow therapy clinic run by Dr. Alifia Bharmal. I worked with kids who had speech delays, swallowing disorders, ADHD, and dyslexia. I watched therapists use clinical-grade equipment and personalized approaches to help each child. But outside the clinic, those same kids went back to classrooms and worksheets that were designed for a brain that works differently from theirs.
 
-I watched a child try the same worksheet for the third time. She wasn't struggling because she wasn't smart - she was struggling because by the time the system told her she got something right, she'd already decided she was bad at this. She'd already checked out.
+I watched a child try the same worksheet for the third time. She wasn't struggling because she wasn't smart, she was struggling because by the time the system told her she got something right, she'd already decided she was bad at this. She'd already checked out.
 
 And I couldn't help but wonder: **if the therapists at TherapyTales can adapt to each child in real time, why can't the tools kids use every day do the same thing?**
 
