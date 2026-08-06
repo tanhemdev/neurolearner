@@ -55,4 +55,10 @@ NeuroLearner adjusts content pacing, visual complexity, and feedback loops in re
 
 Built by **Tanya Hemdev** - PM/builder, UC Berkeley (Cognitive Science + Data Science).
 
-If you work in special education, child psychology, or EdTech accessibility, I'd love to talk: tanhemdev@gmail.com
+If you work in special education, child psychology, or EdTech accessibility, I'd love to talk: tanyahemdev@berkeley.edu
+
+https://github.com/user-attachments/assets/ac1bbfba-f5eb-4d4b-b578-a10d12a457d6
+
+For Kabir :)
+
+
