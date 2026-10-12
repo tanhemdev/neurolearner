@@ -1,64 +1,105 @@
 # NeuroLearner
 
-**An adaptive learning platform for children with ADHD and dyslexia.**
+**A learning platformer you play with your hand.** A webcam and whatever movement a child has is enough: no controller, no special hardware.
 
----
+**[Play the live demo](https://tanhemdev.github.io/neurolearner/)** · works in Chrome, Edge and Safari on a laptop with a webcam, or with keys, touch or a single switch.
+
+[![CI](https://github.com/tanhemdev/neurolearner/actions/workflows/ci.yml/badge.svg)](https://github.com/tanhemdev/neurolearner/actions/workflows/ci.yml)
+[![Deploy](https://github.com/tanhemdev/neurolearner/actions/workflows/pages.yml/badge.svg)](https://github.com/tanhemdev/neurolearner/actions/workflows/pages.yml)
 
 <p align="center">
-  <img src="assets/therapytales-equipment.jpeg" width="400" alt="eSwallow equipment at TherapyTales clinic" />
-  <img src="assets/therapytales-clinic.jpeg" width="400" alt="TherapyTales clinic" />
+  <img src="assets/demo.png" width="720" alt="NeuroLearner gameplay: an orange character on grassy platforms, with a bubble labeled G and a prompt reading Find G" />
 </p>
 
-## Why i built this
+## Why I built this
 
-In 2024, I interned at [TherapyTales](https://www.instagram.com/therapytalesclinic/) in Mumbai - a speech and swallow therapy clinic run by Dr. Alifia Bharmal. I worked with kids who had speech delays, swallowing disorders, ADHD, and dyslexia. I watched therapists use clinical-grade equipment and personalized approaches to help each child. But outside the clinic, those same kids went back to classrooms and worksheets that were designed for a brain that works differently from theirs.
+In 2024 I interned at [TherapyTales](https://www.instagram.com/therapytalesclinic/), a speech and swallow therapy clinic in Mumbai run by Dr. Alifia Bharmal. The kids I met there spent their sessions with tools adapted to them. Then they went home to learning games built for a child who can grip a controller or tap a small button fast.
 
-I watched a child try the same worksheet for the third time. She wasn't struggling because she wasn't smart, she was struggling because by the time the system told her she got something right, she'd already decided she was bad at this. She'd already checked out.
+NeuroLearner flips that. It starts by measuring the movement a child is comfortable with and stretches that range to cover the whole game. Steering is moving your hand left and right. Jumping is a pinch, opening your hand, or raising it: whichever that child can do.
 
-And I couldn't help but wonder: **if the therapists at TherapyTales can adapt to each child in real time, why can't the tools kids use every day do the same thing?**
+<p align="center">
+  <img src="assets/therapytales-equipment.jpeg" width="360" alt="Therapy equipment at the TherapyTales clinic" />
+  <img src="assets/therapytales-clinic.jpeg" width="360" alt="The TherapyTales clinic" />
+</p>
 
-So I looked it up. **1 in 5 children** in the US have learning differences like ADHD or dyslexia. That's **4 million kids** under 18. **60% of students with learning disabilities drop out of high school** - compared to the average dropout rate of 6.5%. Kids with reading problems specifically? **62% dropout rate.** And 45% of kids with ADHD also have a co-occurring learning disability on top of it.
+## What it does
 
-These aren't broken kids. They're kids stuck in a system that gives feedback in 5-minute windows when their brains need it in 30-second ones. The worksheet wasn't designed for their brain. So I built something that was.
+- **Hand control through a webcam.** MediaPipe Hand Landmarker tracks 21 points on the hand, entirely in the browser. Video never leaves the device.
+- **Calibrates to the child, not the other way round.** A 5-second calibration records the child's comfortable left-right range (5th to 95th percentile, so one stray frame can't stretch it). A small range still gives full control.
+- **Three jump gestures:** pinch, open a closed hand, or raise the hand. Each uses hysteresis plus a 600 ms refractory period, so a hand hovering near the threshold doesn't fire ten jumps.
+- **Tremor-friendly steering:** an adjustable still zone and smoothing.
+- **No fail states.** Falling off a platform pops you back to the last safe spot. A wrong bubble bounces away gently. After two wrong touches the right one glows.
+- **Learning content:** find letters, numbers or colors. Prompts are spoken aloud, and color bubbles always show the color's name, so color-blind players can play too.
+- **Every input works:** arrow keys, touch buttons, a click or tap, or a single adaptive switch with **Auto-walk** (the game walks for you and the switch only jumps).
+- **Built for sensory needs:** high-contrast mode, reduced motion (on automatically if the OS asks for it), sound and speech toggles, slow game speed.
+- **Per-child profiles and a session summary** (stars, wrong touches, median time to find, minutes played). Both stay in the browser.
+
+## How it works
+
+```
+webcam ──► MediaPipe Hand Landmarker (WASM, on-device) ──► 21 landmarks
+                                                              │
+         gestures.js:  mirror → palm center → smooth (EMA)    │
+                       steer = calibrated range + still zone ◄┘
+                       jump  = pinch | open | raise detector
+                                  │
+         game.js:      fixed rules, deterministic levels  ◄───┘   ◄── keys / touch / switch
+                                  │
+         render.js:    canvas world + DOM HUD (screen-reader friendly)
+```
+
+The gesture rules are pure functions with no camera or DOM dependencies. They're mirrored line for line in Python (`python/neurolearner/gestures.py`), and **both are tested against the same hand poses** in `fixtures/hands.json`, so the browser game and the desktop controller can't drift apart.
+
+More detail: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
+## Run it
+
+**Browser game:** open the [live demo](https://tanhemdev.github.io/neurolearner/), or serve `web/` locally:
+
+```bash
+npx http-server web -p 8080      # then open http://localhost:8080
+```
+
+**Desktop controller (Python):** turns hand gestures into arrow-key and space presses, so a child can play this game or any keyboard game hands-free.
+
+```bash
+cd python
+pip install -r requirements.txt
+python -m neurolearner --jump pinch          # or --jump open / --jump raise
+python -m neurolearner --dry-run             # show tracking without pressing keys
+```
+
+## Tests
+
+| Suite | What it checks | Command |
+|---|---|---|
+| Gesture rules (JS) | pinch, open-hand and raise detection, calibration, steering, scale invariance | `npm test` |
+| Game rules (JS) | deterministic levels, every gap is jumpable, respawn, scoring, level completion | `npm test` |
+| Gesture rules (Python) | same poses, same expectations as the JS suite | `pytest python/tests` |
+| End-to-end (browser) | plays the real page in Chromium with keys at desktop and phone widths, and in camera mode with a fake webcam plus a stand-in tracker that replays the fixture poses | `npm run test:e2e` |
+
+All of them run in [GitHub Actions](.github/workflows/ci.yml) on every push. The demo deploys to GitHub Pages from `main`.
+
+## Status and honest limits
+
+- v1.0 is a working, tested prototype. **It has not been evaluated with children or clinicians yet.** The plan for that is in [docs/METRICS.md](docs/METRICS.md).
+- Hand tracking quality depends on lighting and camera. The on-screen preview shows frames per second and detection time so an adult can see when tracking is struggling.
+- The gesture thresholds are sensible defaults, not clinically tuned values.
+
+## Docs
+
+| Document | What's in it |
+|---|---|
+| [PRD](docs/PRD.md) | Problem, users, requirements, what's in and out of scope |
+| [User research](docs/USER_RESEARCH.md) | What came from the clinic internship, the assumptions it led to, and how to test them |
+| [Architecture](docs/ARCHITECTURE.md) | Modules, data flow, privacy, testing strategy |
+| [Build log](docs/SPRINT_LOG.md) | What was built and when |
+| [Metrics](docs/METRICS.md) | What's measured today, and the pilot metrics still to collect |
 
 ---
 
-## What It Does
-
-NeuroLearner adjusts content pacing, visual complexity, and feedback loops in real time based on each child's cognitive profile. It doesn't make things easier. It makes the feedback loop shorter so kids feel progress before they give up.
-
-**Piloted with 15 students** at a local after-school program in Berkeley:
-- **35% improvement** in task completion rates
-- **40% reduction** in frustration indicators
-
-## Tech Stack
-
-| Layer | Technology | Why |
-|-------|-----------|-----|
-| Backend | Python (Flask) | Lightweight, fast iteration for a pilot |
-| ML/Adaptive Model | TensorFlow | Flexible enough for continuous profile updates |
-| Frontend | React | Component-based UI makes it easy to swap visual complexity levels |
-| Database | PostgreSQL | Relational structure for cognitive profiles + progress data |
-| Privacy | COPPA-compliant | No PII stored. All data anonymized at ingestion. |
-
-## Documentation
-
-| Document | What's In It |
-|----------|-------------|
-| [PRD.md](./docs/PRD.md) | Product requirements, personas, feature priorities |
-| [USER_RESEARCH.md](./docs/USER_RESEARCH.md) | Parent, teacher, and psychologist interviews + observations |
-| [ARCHITECTURE.md](./docs/ARCHITECTURE.md) | System design, adaptive engine, privacy model |
-| [SPRINT_LOG.md](./docs/SPRINT_LOG.md) | 6 sprints of building, pivoting, and learning |
-| [METRICS.md](./docs/METRICS.md) | Pilot results across 15 students |
-
----
-
-Built by **Tanya Hemdev** - PM/builder, UC Berkeley (Cognitive Science + Data Science).
-
-If you work in special education, child psychology, or EdTech accessibility, I'd love to talk: tanyahemdev@berkeley.edu
-
-https://github.com/user-attachments/assets/ac1bbfba-f5eb-4d4b-b578-a10d12a457d6
+Built by [Tanya Hemdev](https://tanyahemdev.com), UC Berkeley (Cognitive Science + Data Science). If you work in pediatric therapy, special education or accessible games, I'd love to hear what breaks: tanyahemdev@berkeley.edu
 
 For Kabir :)
 
-
+https://github.com/user-attachments/assets/ac1bbfba-f5eb-4d4b-b578-a10d12a457d6

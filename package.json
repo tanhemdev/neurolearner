@@ -1,0 +1,16 @@
+{
+  "name": "neurolearner",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A learning platformer you steer with your hand through a webcam.",
+  "type": "module",
+  "scripts": {
+    "test": "node --test web/tests/gestures.test.mjs web/tests/game.test.mjs",
+    "test:e2e": "node web/tests/e2e.mjs",
+    "serve": "npx --yes http-server web -p 8080 -c-1"
+  },
+  "devDependencies": {
+    "playwright": "^1.56.0"
+  },
+  "license": "MIT"
+}
