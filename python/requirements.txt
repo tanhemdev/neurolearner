@@ -1,0 +1,4 @@
+# Desktop controller (webcam -> keyboard). Tested on Python 3.10-3.12.
+mediapipe>=0.10.14
+opencv-python>=4.8
+pynput>=1.7
