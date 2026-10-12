@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NeuroLearner: a gesture-controlled learning platformer</title>
+  <meta name="description" content="A learning platformer you steer with your hand through a webcam. Built for kids who can't use a standard controller. Runs entirely in the browser.">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo" aria-hidden="true"></span>
+      <div>
+        <h1>NeuroLearner</h1>
+        <p class="tag">A learning platformer you play with your hand</p>
+      </div>
+    </div>
+    <nav class="links">
+      <button id="btn-settings" class="ghost" type="button">Settings</button>
+      <a class="ghost" href="https://github.com/tanhemdev/neurolearner" target="_blank" rel="noopener">Code</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="stage" aria-label="Game">
+      <canvas id="game" width="960" height="540" aria-hidden="true"></canvas>
+
+      <div class="hud" aria-hidden="false">
+        <div class="target" id="target" aria-live="polite">
+          <span class="find">Find</span>
+          <span class="target-label" id="target-label">?</span>
+        </div>
+        <div class="stars" id="stars" aria-label="Stars collected">0</div>
+      </div>
+
+      <div class="preview-wrap" id="preview-wrap" hidden>
+        <canvas id="preview" width="200" height="150" aria-label="Camera preview with tracked hand"></canvas>
+        <div class="preview-stats" id="preview-stats"></div>
+      </div>
+      <video id="video" playsinline muted hidden></video>
+
+      <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+      <div class="touch-controls" id="touch-controls" hidden>
+        <button type="button" class="tc" data-dir="-1" aria-label="Move left">&#9664;</button>
+        <button type="button" class="tc" data-dir="1" aria-label="Move right">&#9654;</button>
+        <button type="button" class="tc jump" id="tc-jump" aria-label="Jump">Jump</button>
+      </div>
+
+      <!-- Start screen -->
+      <div class="overlay" id="start">
+        <div class="card">
+          <h2>Ready to play?</h2>
+          <p>Steer the orange buddy and pop the bubble you're asked to find. Falling off is fine: you just pop back up.</p>
+          <div class="choices">
+            <button type="button" class="big primary" id="play-camera">
+              <strong>Play with my hand</strong>
+              <span>Uses your webcam</span>
+            </button>
+            <button type="button" class="big" id="play-keys">
+              <strong>Play with keys or a switch</strong>
+              <span>Arrow keys, space, tap or any switch</span>
+            </button>
+          </div>
+          <p class="fine">Camera video is processed on this device by MediaPipe and is never recorded or uploaded. <button type="button" class="linkish" id="start-settings">Settings</button></p>
+          <p class="status" id="start-status" role="status" aria-live="polite"></p>
+        </div>
+      </div>
+
+      <!-- Calibration -->
+      <div class="overlay" id="calibrate" hidden>
+        <div class="card">
+          <h2>Let's find your comfy range</h2>
+          <p id="cal-instruction">Hold your hand up so the camera can see it, then move it slowly left and right, only as far as feels comfortable.</p>
+          <div class="cal-bar" aria-hidden="true"><div class="cal-range" id="cal-range"></div><div class="cal-dot" id="cal-dot"></div></div>
+          <p class="countdown" id="cal-count" aria-live="polite"></p>
+          <div class="row">
+            <button type="button" class="primary" id="cal-start">Start (5 seconds)</button>
+            <button type="button" id="cal-skip" hidden>Use my last calibration</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pause / summary -->
+      <div class="overlay" id="pause" hidden>
+        <div class="card">
+          <h2>Paused</h2>
+          <dl class="summary" id="summary"></dl>
+          <div class="row">
+            <button type="button" class="primary" id="resume">Keep playing</button>
+            <button type="button" id="pause-settings">Settings</button>
+            <button type="button" id="copy-summary">Copy session summary</button>
+            <button type="button" id="restart">Start over</button>
+          </div>
+          <p class="fine">The summary stays on this device. Copy it if a therapist or teacher wants to track progress.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="help" aria-label="How to play">
+      <div>
+        <h3>Hand controls</h3>
+        <ul>
+          <li><b>Steer:</b> move your hand left or right inside your calibrated range.</li>
+          <li><b>Jump:</b> pinch thumb and finger (or open your hand, or raise it, in Settings).</li>
+          <li><b>Pause:</b> press <kbd>Esc</kbd> or <kbd>P</kbd>.</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Keys, touch and switches</h3>
+        <ul>
+          <li><kbd>&larr;</kbd> <kbd>&rarr;</kbd> or <kbd>A</kbd> <kbd>D</kbd> to move, <kbd>Space</kbd> or <kbd>Enter</kbd> to jump.</li>
+          <li>Single switch? Turn on <b>Auto-walk</b> in Settings and the switch only has to jump.</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Why it exists</h3>
+        <p>Most learning games assume a child can hold a controller. NeuroLearner started at TherapyTales, a speech and swallow therapy clinic in Mumbai, to make a game where a webcam and whatever movement a child has is enough.</p>
+      </div>
+    </section>
+  </main>
+
+  <dialog id="settings">
+    <form method="dialog" class="settings-form" id="settings-form">
+      <h2>Settings</h2>
+
+      <fieldset>
+        <legend>Profile</legend>
+        <div class="row">
+          <select id="s-profile" aria-label="Active profile"></select>
+          <input id="s-newname" type="text" placeholder="New profile name" aria-label="New profile name" maxlength="30">
+          <button type="button" id="s-add">Add</button>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Jump gesture</legend>
+        <label><input type="radio" name="jumpGesture" value="pinch"> Pinch thumb and index finger</label>
+        <label><input type="radio" name="jumpGesture" value="open"> Open a closed hand</label>
+        <label><input type="radio" name="jumpGesture" value="raise"> Raise the hand</label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Movement</legend>
+        <label>Still zone (helps with tremor) <input type="range" name="deadZone" min="0" max="0.5" step="0.05"></label>
+        <label>Smoothing <input type="range" name="smoothing" min="0.1" max="0.9" step="0.05"></label>
+        <label>Game speed
+          <select name="speed">
+            <option value="0.5">Slow</option>
+            <option value="0.75">Relaxed</option>
+            <option value="1">Normal</option>
+          </select>
+        </label>
+        <label>Gaps
+          <select name="difficulty">
+            <option value="gentle">Small gaps</option>
+            <option value="steady">Medium gaps</option>
+            <option value="bold">Big gaps</option>
+          </select>
+        </label>
+        <label><input type="checkbox" name="autoWalk"> Auto-walk (single switch: only jumping needed)</label>
+        <button type="button" id="s-recal">Recalibrate hand range</button>
+      </fieldset>
+
+      <fieldset>
+        <legend>Learning</legend>
+        <label>Find
+          <select name="content">
+            <option value="letters">Letters</option>
+            <option value="numbers">Numbers</option>
+            <option value="colors">Colors</option>
+          </select>
+        </label>
+        <label><input type="checkbox" name="hints"> Glow hint after two wrong bubbles</label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Sensory</legend>
+        <label><input type="checkbox" name="sound"> Sounds</label>
+        <label><input type="checkbox" name="speech"> Spoken prompts</label>
+        <label><input type="checkbox" name="highContrast"> High contrast</label>
+        <label><input type="checkbox" name="reducedMotion"> Reduce motion</label>
+      </fieldset>
+
+      <div class="row end">
+        <button value="cancel" type="submit">Close</button>
+        <button value="save" type="submit" class="primary" id="s-save">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
