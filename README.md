@@ -100,6 +100,6 @@ All of them run in [GitHub Actions](.github/workflows/ci.yml) on every push. The
 
 Built by [Tanya Hemdev](https://tanyahemdev.com), UC Berkeley (Cognitive Science + Data Science). If you work in pediatric therapy, special education or accessible games, I'd love to hear what breaks: tanyahemdev@berkeley.edu
 
-For Kabir :)
+For Kabir, thank you for celebrating my 18th birthday with me :)
 
 https://github.com/user-attachments/assets/ac1bbfba-f5eb-4d4b-b578-a10d12a457d6
